@@ -1,58 +1,96 @@
-const DEFAULTS = { posts: [] };
-const KEY = 'tanum-infoscreen:data:v1';
+const DEFAULT_POSTS = [
+  {
+    id: "welcome",
+    title: "Välkommen till Tanum",
+    text: "Här visas viktig information för dig som förare.",
+    category: "Information",
+    image: "",
+    duration: 60,
+    enabled: true,
+    updatedAt: new Date().toISOString()
+  }
+];
 
-const HTML = String.raw`<!doctype html>
-<html lang="sv">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#082b55"><title>Tanum InfoScreen</title>
+function html() {
+return `<!doctype html>
+<html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tanum InfoScreen</title>
 <style>
-:root{--navy:#082b55;--blue:#1264c4;--ink:#142033;--muted:#65748a;--line:#dce4ef;--bg:#f3f6fb;--green:#168447;--red:#d92d35}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}button,input,textarea,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700}.primary{background:var(--blue);color:#fff}.secondary{background:#eaf1fa;color:var(--navy)}.danger{background:#fff0f0;color:#b42318}.hidden{display:none!important}.top{background:var(--navy);color:white;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{display:flex;align-items:center;gap:12px}.bus{font-size:32px}.brand strong{font-size:22px}.brand small{display:block;color:#c9d9ef;margin-top:3px}.navlinks{display:flex;gap:8px;flex-wrap:wrap}.navlinks a{color:white;text-decoration:none;padding:10px 12px;border-radius:8px;background:#ffffff18}.wrap{max-width:1100px;margin:28px auto;padding:0 18px}.panel{background:white;border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:0 5px 18px #102c4b0a}.login{max-width:430px;margin:10vh auto}.login h1{margin-top:0}.field{display:grid;gap:7px;margin:13px 0}.field label{font-weight:700;font-size:14px}.field input,.field textarea,.field select{width:100%;padding:12px;border:1px solid #cbd5e1;border-radius:9px;background:white}.field textarea{min-height:100px;resize:vertical}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;margin-bottom:16px}.post{display:grid;grid-template-columns:120px 1fr auto;gap:16px;align-items:center;border:1px solid var(--line);border-radius:13px;padding:12px;margin:10px 0}.thumb{width:120px;height:78px;border-radius:8px;object-fit:cover;background:#e9eef5}.post h3{margin:0 0 6px}.post p{margin:0;color:var(--muted);white-space:pre-wrap}.tag{display:inline-block;background:#eaf1fa;color:var(--navy);font-size:12px;padding:5px 8px;border-radius:20px;margin-bottom:6px}.actions{display:flex;gap:6px;flex-wrap:wrap}.hint{color:var(--muted);font-size:13px;line-height:1.5}.check{display:flex;align-items:center;gap:8px}.check input{width:auto}.error{color:#b42318}.success{color:var(--green)}
-/* TV */
-.tv{min-height:100vh;background:#eaf0f7;display:flex;flex-direction:column}.tvhead{background:var(--navy);color:#fff;padding:18px 3vw;display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:30px}.tvtitle{font-size:clamp(24px,3vw,48px);font-weight:800}.tvsub{font-size:clamp(13px,1.3vw,20px);color:#d8e5f5;margin-top:4px}.clock{text-align:center;font-size:clamp(24px,3vw,48px);font-weight:800;border-left:1px solid #ffffff40;padding-left:25px}.date{font-size:14px;font-weight:400;color:#d8e5f5}.weather{font-size:clamp(18px,2vw,28px);text-align:center}.tvmain{flex:1;display:grid;grid-template-columns:1.1fr 1fr;gap:0;background:white;min-height:0}.tvimage{width:100%;height:100%;min-height:300px;object-fit:cover;background:#dce5ef}.tvcontent{padding:4vw;display:flex;flex-direction:column;justify-content:center}.category{display:inline-block;align-self:flex-start;padding:12px 20px;border-radius:12px;color:#fff;font-size:clamp(18px,2vw,30px);font-weight:800;background:var(--blue);margin-bottom:22px}.category.road{background:#d71920}.category.apt{background:#1264c4}.category.info{background:#168447}.tvcontent h1{font-size:clamp(28px,3.2vw,56px);margin:0 0 16px;line-height:1.08}.tvcontent p{font-size:clamp(19px,2vw,32px);line-height:1.35;margin:0;white-space:pre-wrap}.ticker{background:#fff;padding:15px 3vw;display:flex;gap:18px;align-items:center;border-top:8px solid var(--navy);font-size:clamp(16px,1.7vw,26px)}.ticker b{background:var(--blue);color:white;padding:10px 18px;border-radius:8px;white-space:nowrap}.tvfoot{background:var(--navy);color:#d8e5f5;padding:8px 3vw;text-align:right;font-size:13px}.dots{text-align:center;margin:8px;color:#8a9bb0;letter-spacing:8px}
-@media(max-width:700px){.top{align-items:flex-start;flex-direction:column}.grid{grid-template-columns:1fr}.post{grid-template-columns:75px 1fr}.thumb{width:75px;height:65px}.post .actions{grid-column:1/-1}.tvhead{grid-template-columns:1fr auto;gap:12px}.weather{display:none}.tvmain{grid-template-columns:1fr;grid-template-rows:35vh 1fr}.tvimage{min-height:0}.tvcontent{padding:22px}.ticker{font-size:14px;flex-wrap:wrap}.ticker b{padding:7px 10px}}
-</style></head><body><div id="app"></div>
+:root{--navy:#102b46;--blue:#1769aa;--gold:#e6bd55;--bg:#eef2f5}
+*{box-sizing:border-box}body{margin:0;font-family:Arial, sans-serif;background:var(--bg);color:#172331}
+header{background:var(--navy);color:white;padding:16px 22px;display:flex;justify-content:space-between;align-items:center}
+.brand{font-size:clamp(20px,3vw,34px);font-weight:800;letter-spacing:.3px}.sub{opacity:.8;font-size:14px;margin-top:4px}
+main{max-width:1250px;margin:22px auto;padding:0 18px}
+.screen{background:#fff;border-radius:22px;overflow:hidden;min-height:65vh;display:grid;grid-template-columns:1.1fr .9fr;box-shadow:0 8px 30px #102b4618}
+.photo{background:linear-gradient(135deg,#dce8ef,#b9cbd8);min-height:420px;display:flex;align-items:center;justify-content:center;color:#486174;font-size:80px}
+.photo img{width:100%;height:100%;object-fit:cover;max-height:70vh}
+.content{padding:clamp(24px,4vw,58px);display:flex;flex-direction:column;justify-content:center}
+.tag{color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:2px;font-size:14px}
+h1{font-size:clamp(30px,4.5vw,58px);line-height:1.05;margin:18px 0}
+.message{font-size:clamp(18px,2vw,25px);line-height:1.5;color:#435466;white-space:pre-wrap}
+.meta{margin-top:28px;color:#748391;font-size:14px}
+footer{display:flex;justify-content:space-between;align-items:center;padding:14px 4px;color:#6c7a87;font-size:13px}
+.dots{display:flex;gap:7px}.dot{width:8px;height:8px;border-radius:50%;background:#c4cdd5}.dot.on{background:var(--blue)}
+.admin{margin:28px 0;background:white;border-radius:16px;padding:20px;box-shadow:0 4px 18px #102b4610}
+input,textarea,select{width:100%;padding:12px;border:1px solid #ccd5dd;border-radius:9px;font:inherit;margin:6px 0 12px}
+textarea{min-height:90px}button{border:0;border-radius:9px;padding:12px 17px;background:var(--blue);color:white;font-weight:700;font-size:15px;margin:4px 5px 4px 0}
+button.secondary{background:#e8edf1;color:#203447}button.danger{background:#a93636}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.post{border:1px solid #dce2e7;padding:12px;border-radius:10px;margin:8px 0;display:flex;justify-content:space-between;gap:10px}
+.small{font-size:13px;color:#657482}
+@media(max-width:720px){.screen{grid-template-columns:1fr}.photo{min-height:240px;max-height:34vh}.content{padding:25px}.row{grid-template-columns:1fr}}
+</style></head><body>
+<header><div><div class="brand">LYSEKIL BUSS <span style="color:var(--gold)">|</span> TANUM INFOSCREEN</div><div class="sub">Förarinformation · Tanum</div></div><button class="secondary" onclick="toggleAdmin()">Admin</button></header>
+<main>
+<section class="screen" id="screen"><div class="photo" id="photo">🚌</div><div class="content"><div class="tag" id="category">Information</div><h1 id="title">Välkommen till Tanum</h1><div class="message" id="message">Här visas viktig information för dig som förare.</div><div class="meta" id="meta">Lysekil Buss · Tanum</div></div></section>
+<footer><span>Designed by Ahmad Kassab</span><div class="dots" id="dots"></div><span id="counter"></span></footer>
+<section class="admin" id="admin" hidden>
+<h2>Administrera information</h2><p class="small">Logga in med administratörskoden för att lägga till och ändra meddelanden. Ändringar sparas på servern när KV-kopplingen är aktiverad.</p>
+<div id="login"><label>Administratörskod</label><input id="pin" type="password" placeholder="Ange kod"><button onclick="login()">Logga in</button><span id="loginMsg" class="small"></span></div>
+<div id="editor" hidden>
+<label>Rubrik</label><input id="fTitle" placeholder="Exempel: Vägarbete på väg 163">
+<label>Kategori</label><select id="fCategory"><option>Information</option><option>Vägarbete</option><option>Viktigt meddelande</option><option>APT</option><option>Bussinformation</option></select>
+<label>Meddelande</label><textarea id="fText" placeholder="Skriv informationen på svenska..."></textarea>
+<label>Bildlänk (valfritt)</label><input id="fImage" type="url" placeholder="https://...">
+<div class="row"><div><label>Visningstid (sekunder)</label><input id="fDuration" type="number" min="10" max="600" value="60"></div><div><label>Visa inlägget</label><select id="fEnabled"><option value="true">Ja</option><option value="false">Nej</option></select></div></div>
+<button onclick="savePost()">Spara inlägg</button><button class="secondary" onclick="clearForm()">Rensa formulär</button><h3>Publicerade inlägg</h3><div id="postList"></div>
+</div></section>
+</main>
 <script>
-const app=document.getElementById('app');let posts=[],current=0,timer=null,editing=null;
-const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const api=async(path,opts={})=>{const r=await fetch(path,{...opts,headers:{'Content-Type':'application/json',...(sessionStorage.getItem('tis_pin')?{'x-admin-pin':sessionStorage.getItem('tis_pin')}:{ }),...(opts.headers||{})}});if(!r.ok)throw new Error((await r.text())||'Request failed');return r.json()};
-const path=location.pathname;
-function shell(content){app.innerHTML='<header class="top"><div class="brand"><span class="bus">🚌</span><div><strong>Tanum InfoScreen</strong><small>Information för våra förare</small></div></div><nav class="navlinks"><a href="/tv">TV-visning</a><a href="/admin">Administration</a></nav></header>'+content}
-async function load(){const d=await api('/api/posts');posts=d.posts||[]}
-function login(){app.innerHTML='<div class="login panel"><h1>Tanum InfoScreen</h1><p>Logga in för att hantera informationen.</p><form id="login"><div class="field"><label>Administratörskod</label><input id="pin" type="password" inputmode="numeric" required placeholder="Ange kod"></div><button class="primary" type="submit">Logga in</button><p id="msg" class="hint"></p></form></div>';document.getElementById('login').onsubmit=async e=>{e.preventDefault();try{await api('/api/login',{method:'POST',body:JSON.stringify({pin:document.getElementById('pin').value})});sessionStorage.setItem('tis_auth','1');sessionStorage.setItem('tis_pin',document.getElementById('pin').value);admin()}catch(err){document.getElementById('msg').textContent='Fel kod. Försök igen.'}}}
-function admin(){shell('<main class="wrap"><div class="toolbar"><div><h1 style="margin:0">Administration</h1><p class="hint">Skapa och publicera information som visas automatiskt på TV-skärmen.</p></div><div class="actions"><a href="/tv" target="_blank"><button class="secondary">Förhandsvisa TV</button></a><button class="primary" id="new">＋ Nytt inlägg</button><button class="secondary" id="logout">Logga ut</button></div></div><section id="editor" class="panel hidden"><h2 id="formtitle">Nytt inlägg</h2><form id="postform"><div class="grid"><div class="field"><label>Rubrik</label><input id="title" maxlength="90" required placeholder="Ex. Vägarbete – Väg 164"></div><div class="field"><label>Kategori</label><select id="category"><option value="road">Vägarbete</option><option value="apt">APT-möte</option><option value="info">Information</option><option value="safety">Säkerhet</option><option value="other">Övrigt</option></select></div></div><div class="field"><label>Meddelande</label><textarea id="message" required placeholder="Skriv informationen som ska visas på skärmen..."></textarea></div><div class="grid"><div class="field"><label>Bild (valfritt)</label><input id="image" type="file" accept="image/*"><span class="hint">Välj en bild från mobilen. Max 2 MB.</span></div><div class="field"><label>Visningstid</label><select id="duration"><option value="15">15 sekunder</option><option value="20" selected>20 sekunder</option><option value="30">30 sekunder</option><option value="45">45 sekunder</option><option value="60">1 minut</option></select><label class="check"><input id="enabled" type="checkbox" checked> Publicera på TV</label></div></div><div class="actions"><button class="primary" type="submit">Spara inlägg</button><button class="secondary" type="button" id="cancel">Avbryt</button></div><p id="formmsg" class="hint"></p></form></section><section class="panel" style="margin-top:18px"><div class="toolbar"><h2 style="margin:0">Publicerade inlägg</h2><span class="hint" id="count"></span></div><div id="list"></div></section><p class="hint">Tips: öppna adressen <b>/tv</b> på TV:n i helskärmsläge. Den uppdateras automatiskt när du ändrar innehållet här.</p></main>');
- document.getElementById('new').onclick=()=>showEditor();document.getElementById('cancel').onclick=()=>showEditor(false);document.getElementById('logout').onclick=()=>{sessionStorage.removeItem('tis_auth');sessionStorage.removeItem('tis_pin');login()};document.getElementById('postform').onsubmit=savePost;renderList();}
-function showEditor(show=true,p=null){editing=p;const el=document.getElementById('editor');el.classList.toggle('hidden',!show);if(!show)return;document.getElementById('formtitle').textContent=p?'Redigera inlägg':'Nytt inlägg';document.getElementById('title').value=p?.title||'';document.getElementById('category').value=p?.category||'road';document.getElementById('message').value=p?.message||'';document.getElementById('duration').value=p?.duration||20;document.getElementById('enabled').checked=p?p.enabled!==false:true;document.getElementById('image').value='';document.getElementById('formmsg').textContent='';el.scrollIntoView({behavior:'smooth'});}
-async function savePost(e){e.preventDefault();const msg=document.getElementById('formmsg');msg.textContent='Sparar...';try{let image=editing?.image||'';const f=document.getElementById('image').files[0];if(f){if(f.size>2*1024*1024)throw new Error('Bilden är större än 2 MB. Välj en mindre bild.');image=await new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f)})}const item={id:editing?.id||crypto.randomUUID(),title:document.getElementById('title').value.trim(),category:document.getElementById('category').value,message:document.getElementById('message').value.trim(),duration:Number(document.getElementById('duration').value),enabled:document.getElementById('enabled').checked,image,updatedAt:Date.now()};const next=editing?posts.map(x=>x.id===editing.id?item:x):[item,...posts];await api('/api/posts',{method:'PUT',body:JSON.stringify({posts:next})});posts=next;showEditor(false);renderList();}catch(err){msg.textContent=err.message;msg.className='hint error'}}
-function renderList(){const list=document.getElementById('list');document.getElementById('count').textContent=posts.length+' inlägg';if(!posts.length){list.innerHTML='<p class="hint">Inga inlägg ännu. Tryck på ”Nytt inlägg” för att skapa det första.</p>';return}list.innerHTML=posts.map((p,i)=>'<article class="post"><img class="thumb" src="'+(p.image||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2278%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23e9eef5%22/%3E%3C/svg%3E')+'"><div><span class="tag">'+esc(label(p.category))+'</span><h3>'+esc(p.title)+'</h3><p>'+esc(p.message)+'</p><small class="hint">'+(p.enabled?'Publicerad':'Dold')+' · '+p.duration+' sek</small></div><div class="actions"><button class="secondary" data-edit="'+p.id+'">Ändra</button><button class="secondary" data-toggle="'+p.id+'">'+(p.enabled?'Dölj':'Visa')+'</button><button class="secondary" data-up="'+p.id+'" '+(i===0?'disabled':'')+'>↑</button><button class="secondary" data-down="'+p.id+'" '+(i===posts.length-1?'disabled':'')+'>↓</button><button class="danger" data-del="'+p.id+'">Ta bort</button></div></article>').join('');list.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>showEditor(true,posts.find(p=>p.id===b.dataset.edit)));list.querySelectorAll('[data-toggle]').forEach(b=>b.onclick=()=>mutate(b.dataset.toggle,p=>p.enabled=!p.enabled));list.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{if(confirm('Ta bort inlägget?'))mutate(b.dataset.del,(_,i)=>posts.splice(i,1))});list.querySelectorAll('[data-up],[data-down]').forEach(b=>b.onclick=()=>{const id=b.dataset.up||b.dataset.down;const i=posts.findIndex(p=>p.id===id),j=i+(b.dataset.up?-1:1);if(j<0||j>=posts.length)return;[posts[i],posts[j]]=[posts[j],posts[i]];persist()})}
-async function mutate(id,fn){const i=posts.findIndex(p=>p.id===id);if(i<0)return;fn(posts[i],i);await persist()}async function persist(){await api('/api/posts',{method:'PUT',body:JSON.stringify({posts})});renderList()}
-function label(c){return ({road:'Vägarbete',apt:'APT-möte',info:'Information',safety:'Säkerhet',other:'Övrigt'})[c]||'Information'}
-function tv(){document.body.className='tv';app.innerHTML='<header class="tvhead"><div><div class="tvtitle">🚌 Lysekil Buss　 <span style="color:#fff">Tanum InfoScreen</span></div><div class="tvsub">Information för våra förare</div></div><div class="clock"><span id="time"></span><div class="date" id="date"></div></div><div class="weather">☁️<div>Tanum</div></div></header><main class="tvmain"><img id="hero" class="tvimage"><section class="tvcontent"><span id="cat" class="category">Information</span><h1 id="headline">Välkommen</h1><p id="body">Information från trafikledningen visas här.</p></section></main><div class="ticker"><b id="ticklabel">Information</b><span id="tickertext">Välkommen till Tanum InfoScreen</span></div><div class="dots" id="dots">● ○ ○</div><footer class="tvfoot">Information för våra förare · Tanum</footer>';
- const updateClock=()=>{const d=new Date();document.getElementById('time').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});document.getElementById('date').textContent=d.toLocaleDateString('sv-SE',{weekday:'short',day:'numeric',month:'short',year:'numeric'})};updateClock();setInterval(updateClock,1000);refreshTv();setInterval(refreshTv,15000)}
-async function refreshTv(){try{const d=await api('/api/posts');posts=(d.posts||[]).filter(p=>p.enabled!==false);if(!posts.length){document.getElementById('headline').textContent='Välkommen';document.getElementById('body').textContent='Ingen aktuell information just nu.';document.getElementById('hero').src='';return}if(current>=posts.length)current=0;showSlide();if(!timer){schedule()}}catch(e){}}
-function showSlide(){const p=posts[current];if(!p)return;const cat=document.getElementById('cat');cat.textContent=label(p.category);cat.className='category '+(p.category==='road'?'road':p.category==='apt'?'apt':p.category==='info'?'info':'');document.getElementById('headline').textContent=p.title;document.getElementById('body').textContent=p.message;document.getElementById('hero').src=p.image||'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22800%22 height=%22600%22%3E%3Crect width=%22100%25%22 height=%22100%25%22 fill=%22%23dce5ef%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%22100%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22%3E%F0%9F%9A%8C%3C/text%3E%3C/svg%3E';document.getElementById('ticklabel').textContent=label(p.category);document.getElementById('tickertext').textContent=p.title+' — '+p.message.replace(/\s+/g,' ').slice(0,140);document.getElementById('dots').textContent=posts.map((_,i)=>i===current?'●':'○').join('　')}
-function schedule(){clearTimeout(timer);if(!posts.length){timer=null;return}timer=setTimeout(()=>{current=(current+1)%posts.length;showSlide();schedule()},Math.max(10,Number(posts[current]?.duration)||20)*1000)}
-(async()=>{if(path==='/tv'){tv();return}try{await load();if(sessionStorage.getItem('tis_auth')==='1')admin();else login()}catch(e){app.innerHTML='<div class="wrap panel"><h2>Kan inte ansluta till databasen</h2><p>Administratören behöver kontrollera att KV-lagringen är kopplad till Worker.</p></div>'}})();
+let posts=[],index=0,timer=null,adminToken="";
+const $=id=>document.getElementById(id);
+async function api(path,opts={}){let r=await fetch(path,{...opts,headers:{"Content-Type":"application/json","Authorization":adminToken?`Bearer ${adminToken}`:"",...(opts.headers||{})}});let d=await r.json().catch(()=>({}));if(!r.ok)throw Error(d.error||"Något gick fel");return d}
+async function load(){try{let d=await api("/api/posts");posts=(d.posts||[]).filter(p=>p.enabled);if(!posts.length)posts=[{...${JSON.stringify(DEFAULT_POSTS[0])}}];render();}catch(e){$("title").textContent="Kan inte hämta information";$("message").textContent=e.message;}}
+function render(){if(!posts.length)return;index=index%posts.length;let p=posts[index];$("category").textContent=p.category||"Information";$("title").textContent=p.title||"";$("message").textContent=p.text||"";$("meta").textContent="Lysekil Buss · Tanum";$("photo").innerHTML=p.image?`<img src="${esc(p.image)}" alt="">`:"🚌";$("dots").innerHTML=posts.map((_,i)=>`<span class="dot ${i===index?"on":""}"></span>`).join("");$("counter").textContent=`${index+1} / ${posts.length}`;clearTimeout(timer);timer=setTimeout(()=>{index=(index+1)%posts.length;render()},Math.max(10,Number(p.duration)||60)*1000)}
+function esc(s){return String(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function toggleAdmin(){$("admin").hidden=!$("admin").hidden}
+async function login(){try{adminToken=$("pin").value;await api("/api/posts");$("login").hidden=true;$("editor").hidden=false;await refreshList()}catch(e){$("loginMsg").textContent="Fel kod eller serverinställning saknas.";adminToken=""}}
+async function refreshList(){let d=await api("/api/all");posts=d.posts||[];$("postList").innerHTML=posts.map(p=>`<div class="post"><div><b>${esc(p.title)}</b><div class="small">${esc(p.category)} · ${p.enabled?"Aktiv":"Pausad"}</div></div><div><button class="secondary" onclick="editPost('${p.id}')">Ändra</button><button class="danger" onclick="deletePost('${p.id}')">Ta bort</button></div></div>`).join("");let active=posts.filter(p=>p.enabled);if(active.length){posts=active;index=0;render()}}
+function clearForm(){["fTitle","fText","fImage"].forEach(id=>$(id).value="");$("fDuration").value=60;$("fEnabled").value="true";$("fCategory").value="Information";$("fTitle").dataset.id=""}
+async function savePost(){let p={id:$("fTitle").dataset.id||crypto.randomUUID(),title:$("fTitle").value.trim(),category:$("fCategory").value,text:$("fText").value.trim(),image:$("fImage").value.trim(),duration:Math.min(600,Math.max(10,Number($("fDuration").value)||60)),enabled:$("fEnabled").value==="true"};if(!p.title||!p.text){alert("Fyll i rubrik och meddelande.");return}try{await api("/api/posts",{method:"PUT",body:JSON.stringify({post:p})});clearForm();await refreshList()}catch(e){alert(e.message)}}
+async function editPost(id){let p=posts.find(x=>x.id===id);if(!p)return;$("fTitle").value=p.title;$("fTitle").dataset.id=p.id;$("fCategory").value=p.category;$("fText").value=p.text;$("fImage").value=p.image||"";$("fDuration").value=p.duration||60;$("fEnabled").value=String(p.enabled)}
+async function deletePost(id){if(!confirm("Ta bort inlägget?"))return;try{await api("/api/posts",{method:"DELETE",body:JSON.stringify({id})});await refreshList()}catch(e){alert(e.message)}}
+load();setInterval(load,30000);
 </script></body></html>`;
+}
 
-function json(data, status=200) { return new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', 'access-control-allow-origin': '*' } }); }
-async function readData(env) { if (!env.INFO_KV) throw new Error('KV binding INFO_KV is missing'); return (await env.INFO_KV.get(KEY, 'json')) || DEFAULTS; }
-async function writeData(env, data) { if (!env.INFO_KV) throw new Error('KV binding INFO_KV is missing'); await env.INFO_KV.put(KEY, JSON.stringify(data)); }
 export default {
  async fetch(request, env) {
   const url = new URL(request.url);
-  if (request.method === 'OPTIONS') return new Response(null, {headers:{'access-control-allow-origin':'*','access-control-allow-methods':'GET,PUT,POST,OPTIONS','access-control-allow-headers':'Content-Type'}});
-  if (url.pathname === '/api/login' && request.method === 'POST') {
-   const body = await request.json().catch(()=>({}));
-   const pin = env.ADMIN_PIN || '2468';
-   return body.pin === pin ? json({ok:true}) : json({error:'Unauthorized'},401);
+  const cors = {"Access-Control-Allow-Origin":"*","Access-Control-Allow-Methods":"GET,PUT,DELETE,OPTIONS","Access-Control-Allow-Headers":"Content-Type,Authorization"};
+  if(request.method==="OPTIONS") return new Response(null,{headers:cors});
+  const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8",...cors}});
+  if(url.pathname==="/" || url.pathname==="/index.html") return new Response(html(),{headers:{"Content-Type":"text/html; charset=utf-8","Cache-Control":"no-store"}});
+  if(url.pathname.startsWith("/api/")){
+   if(!env.INFO_KV) return json({error:"INFO_KV saknas. Skapa och koppla en KV-namespace med namnet INFO_KV."},500);
+   const key="posts";
+   let posts=await env.INFO_KV.get(key,"json")||DEFAULT_POSTS;
+   if(url.pathname==="/api/posts" && request.method==="GET") return json({posts:posts.filter(p=>p.enabled)});
+   const auth=request.headers.get("Authorization")||"";
+   if(!env.ADMIN_PIN || auth!=="Bearer "+env.ADMIN_PIN) return json({error:"Otillåten åtkomst"},401);
+   if(url.pathname==="/api/all" && request.method==="GET") return json({posts});
+   if(url.pathname==="/api/posts" && request.method==="PUT"){let body=await request.json();let p=body.post;if(!p||!p.id||!p.title||!p.text)return json({error:"Ogiltigt inlägg"},400);let i=posts.findIndex(x=>x.id===p.id);if(i<0)posts.push(p);else posts[i]=p;await env.INFO_KV.put(key,JSON.stringify(posts));return json({ok:true})}
+   if(url.pathname==="/api/posts" && request.method==="DELETE"){let body=await request.json();posts=posts.filter(p=>p.id!==body.id);await env.INFO_KV.put(key,JSON.stringify(posts));return json({ok:true})}
   }
-  if (url.pathname === '/api/posts' && request.method === 'GET') { try { return json(await readData(env)); } catch(e) { return json({error:e.message},500); } }
-  if (url.pathname === '/api/posts' && request.method === 'PUT') {
-   if ((request.headers.get('x-admin-pin') || '') !== (env.ADMIN_PIN || '2468')) return json({error:'Unauthorized'},401);
-   try { const body = await request.json(); if (!Array.isArray(body.posts) || body.posts.length > 100) return json({error:'Invalid posts'},400); const bytes = new TextEncoder().encode(JSON.stringify(body)).length; if (bytes > 20*1024*1024) return json({error:'Total content is too large'},413); await writeData(env,{posts:body.posts}); return json({ok:true}); } catch(e) { return json({error:e.message},500); }
-  }
-  if (url.pathname === '/health') return json({ok:true,service:'Tanum InfoScreen'});
-  return new Response(HTML, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+  return json({error:"Not found"},404);
  }
 };
