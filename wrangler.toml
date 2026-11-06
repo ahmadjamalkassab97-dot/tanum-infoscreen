@@ -1,0 +1,10 @@
+name = "tanum-infoscreen"
+main = "worker.js"
+compatibility_date = "2026-11-06"
+
+[[kv_namespaces]]
+binding = "INFO_KV"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"
+
+[vars]
+ADMIN_PIN = "2468"
