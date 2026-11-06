@@ -2,9 +2,8 @@ name = "tanum-infoscreen"
 main = "worker.js"
 compatibility_date = "2026-11-06"
 
-[[kv_namespaces]]
-binding = "INFO_KV"
-id = "PASTE_KV_NAMESPACE_ID_HERE"
-
-[vars]
-ADMIN_PIN = "CHANGE_THIS_PIN"
+# بعد إنشاء KV namespace، أضف binding من لوحة Cloudflare
+# أو ضع الـ id هنا:
+# [[kv_namespaces]]
+# binding = "INFO_KV"
+# id = "ضع_KV_NAMESPACE_ID_هنا"
