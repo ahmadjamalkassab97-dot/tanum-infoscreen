@@ -1,5 +1,10 @@
 # Tanum InfoScreen
+Cloudflare Worker information display for Lysekil Buss / Tanum.
 
-Cloudflare Worker for Lysekil Buss – Tanum. Includes a Swedish TV information display and admin panel.
+- TV display: `/`
+- Admin: `/admin`
+- Health: `/api/health`
+- KV binding required: `INFO_KV`
+- Secret recommended: `ADMIN_PASSWORD`
 
-Required: bind a Workers KV namespace as `INFO_KV` and set the secret/variable `ADMIN_PIN`. Update the placeholder namespace ID in `wrangler.toml` before Wrangler deployment. Images are currently added as HTTPS URLs.
+Features: post CRUD, pause/activate, image upload (2.5 MB), rotation duration, ordering, publication schedule, automatic refresh.
