@@ -1,13 +1,219 @@
-const POSTS='tanum_posts_v2', SETTINGS='tanum_settings_v2', PIN='2468';
-const j=(x,s=200)=>new Response(JSON.stringify(x),{status:s,headers:{'content-type':'application/json; charset=utf-8','cache-control':'no-store'}});
-const esc=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const css=`*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#061d39;color:#111827}button,input,textarea,select{font:inherit}button{border:0;border-radius:10px;padding:12px 16px;font-weight:bold;cursor:pointer}.blue{background:#1260c9;color:white}.red{background:#d71945;color:white}.top{background:#092b53;color:white;padding:16px 3%;display:flex;justify-content:space-between;align-items:center;gap:15px}.brand{font-size:clamp(23px,3vw,40px);font-weight:800}.sub{color:#cbdcf0;margin-top:5px;font-size:clamp(13px,1.5vw,20px)}.clock{text-align:right;font-size:clamp(22px,3vw,38px);font-weight:bold}.date{font-size:clamp(12px,1.3vw,17px);color:#d6e4f4}.hero{width:94%;height:62vh;min-height:370px;margin:22px auto 12px;display:grid;grid-template-columns:1.05fr 1fr;background:#fff;border-radius:20px;overflow:hidden}.photo{background:#14395d;display:flex;align-items:center;justify-content:center;overflow:hidden}.photo img{width:100%;height:100%;object-fit:cover}.placeholder{font-size:90px}.copy{padding:clamp(22px,4vw,55px);display:flex;flex-direction:column;justify-content:center}.tag{align-self:flex-start;background:#d71945;color:white;padding:13px 22px;border-radius:12px;font-weight:bold;font-size:clamp(15px,2vw,25px)}h1{font-size:clamp(28px,4vw,55px);margin:22px 0 12px} .copy p{font-size:clamp(18px,2.4vw,32px);line-height:1.35;white-space:pre-wrap;margin:0}.ticker{width:94%;margin:0 auto 10px;background:#1259bb;color:white;border-radius:12px;padding:16px 22px;display:flex;gap:22px;align-items:center;font-size:clamp(16px,2vw,26px);min-height:65px}.dots{display:flex;justify-content:center;gap:9px}.dot{width:10px;height:10px;border-radius:50%;background:#7894b5}.dot.on{background:white}.foot{width:94%;margin:8px auto 12px;text-align:right;color:#cbdcf0;font-size:14px}.admin{background:#f1f5f9;color:#172033;min-height:100vh;padding:16px}.head{background:#092b53;color:white;padding:18px;border-radius:14px}.panel{background:white;border-radius:14px;padding:18px;margin:14px 0}.field{display:flex;flex-direction:column;gap:7px;margin:10px 0}.field input,.field textarea,.field select{border:1px solid #cbd5e1;border-radius:9px;padding:12px}.field textarea{min-height:100px}.row{display:flex;gap:10px;flex-wrap:wrap}.post{display:flex;align-items:center;gap:12px;border-top:1px solid #e2e8f0;padding:12px 0}.thumb{width:86px;height:62px;object-fit:cover;border-radius:8px;background:#dbeafe}.postinfo{flex:1}.post small{display:block;color:#64748b;margin-top:4px}.login{max-width:420px;margin:10vh auto;background:white;padding:24px;border-radius:16px}@media(max-width:700px){.hero{height:auto;min-height:0;grid-template-columns:1fr}.photo{height:32vh}.copy{padding:22px}.ticker{align-items:flex-start;flex-direction:column;gap:5px}.top{align-items:flex-start}.post{flex-wrap:wrap}.thumb{width:70px}}`;
-const html=(title,body,script='')=>new Response(`<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>${css}</style></head><body>${body}<script>${script}</script></body></html>`,{headers:{'content-type':'text/html; charset=utf-8','cache-control':'no-store'}});
-async function posts(env){return await env.INFO_KV.get(POSTS,'json')||[]} async function settings(env){return await env.INFO_KV.get(SETTINGS,'json')||{}}
-export default {async fetch(req,env){const u=new URL(req.url),p=u.pathname;
-if(p==='/api/posts')return j((await posts(env)).filter(x=>x.on!==false));
-if(p==='/api/settings')return j(await settings(env));
-if(p.startsWith('/api/admin/')){if(req.headers.get('x-pin')!==(env.ADMIN_PIN||PIN))return j({error:'Unauthorized'},401);if(p==='/api/admin/posts'&&req.method==='GET')return j(await posts(env));if(p==='/api/admin/posts'&&req.method==='PUT'){let b=await req.json();if(!Array.isArray(b.posts)||JSON.stringify(b.posts).length>18000000)return j({error:'Invalid or too large'},413);await env.INFO_KV.put(POSTS,JSON.stringify(b.posts));return j({ok:true})}if(p==='/api/admin/settings'&&req.method==='GET')return j(await settings(env));if(p==='/api/admin/settings'&&req.method==='PUT'){let b=await req.json();await env.INFO_KV.put(SETTINGS,JSON.stringify(b));return j({ok:true})}}
-if(p==='/admin')return html('Tanum InfoScreen – Admin',`<main class="admin"><header class="head"><b>🚌 Tanum InfoScreen</b><div>Administratörspanel</div></header><section id="login" class="login"><h2>Logga in</h2><div class="field"><label>Administratörskod</label><input id="pin" type="password" inputmode="numeric" placeholder="Ange kod"></div><button class="blue" onclick="login()">Logga in</button><p id="err"></p><small>Standardkod: 2468. Byt ADMIN_PIN i Worker-inställningarna för bättre säkerhet.</small></section><section id="app" hidden><div class="row"><button class="blue" onclick="newPost()">＋ Nytt inlägg</button><button onclick="open('/')">Visa TV-skärmen</button><button onclick="logout()">Logga ut</button></div><div class="panel"><h2>Publicerade inlägg</h2><div id="list"></div></div><div class="panel"><h2>Informationsremsa och väder</h2><div class="field"><label>Text i nedersta remsan</label><input id="ticker"></div><div class="field"><label>Vädertext</label><input id="weather" placeholder="Exempel: 6 °C"></div><button class="blue" onclick="saveSettings()">Spara</button></div></section><section id="editor" class="panel" hidden><h2 id="et">Nytt inlägg</h2><div class="field"><label>Rubrik</label><input id="title"></div><div class="field"><label>Kategori</label><select id="cat"><option>Information</option><option>Vägarbete</option><option>APT-möte</option><option>Säkerhet</option><option>Biljettsystem</option><option>Viktig information</option></select></div><div class="field"><label>Meddelande</label><textarea id="body"></textarea></div><div class="field"><label>Bild</label><input id="file" type="file" accept="image/*"><img id="prev" style="display:none;max-width:100%;max-height:180px;object-fit:contain"></div><div class="field"><label>Visningstid</label><select id="duration"><option value="60000">1 minut</option><option value="120000" selected>2 minuter</option><option value="180000">3 minuter</option></select></div><div class="row"><button class="blue" onclick="save()">Spara inlägg</button><button onclick="cancel()">Avbryt</button></div><p id="msg"></p></section></main>`,`let pin='',data=[],editId=null,img='';const $=x=>document.getElementById(x);async function call(path,method='GET',body){let r=await fetch(path,{method,headers:{'content-type':'application/json','x-pin':pin},body:body?JSON.stringify(body):undefined});if(!r.ok)throw Error('Kunde inte spara eller läsa data');return r.json()}async function login(){pin=$('pin').value;try{data=await call('/api/admin/posts');$('login').hidden=true;$('app').hidden=false;let s=await call('/api/admin/settings');$('ticker').value=s.ticker||'';$('weather').value=s.weather||'';render()}catch{$('err').textContent='Fel kod eller anslutningsproblem'}}function logout(){pin='';$('app').hidden=true;$('login').hidden=false}function render(){$('list').innerHTML=data.map((x,i)=>`<div class="post"><img class="thumb" src="${x.image||''}"><div class="postinfo"><b>${safe(x.title)}</b><small>${safe(x.category)} · ${Math.round((x.duration||120000)/60000)} min · ${x.on===false?'Pausad':'Aktiv'}</small></div><div class="row"><button onclick="move(${i},-1)">↑</button><button onclick="move(${i},1)">↓</button><button onclick="toggle(${i})">${x.on===false?'▶':'Ⅱ'}</button><button onclick="edit(${i})">تعديل</button><button class="red" onclick="removePost(${i})">حذف</button></div></div>`).join('')||'لا توجد منشورات'}function safe(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}function newPost(){editId=null;img='';$('title').value='';$('body').value='';$('cat').value='Information';$('duration').value='120000';$('prev').style.display='none';$('editor').hidden=false;$('app').hidden=true}function edit(i){editId=i;let x=data[i];$('title').value=x.title;$('body').value=x.body;$('cat').value=x.category;$('duration').value=x.duration;img=x.image||'';if(img){$('prev').src=img;$('prev').style.display='block'}else $('prev').style.display='none';$('editor').hidden=false;$('app').hidden=true}function cancel(){$('editor').hidden=true;$('app').hidden=false;$('file').value=''}$('file').onchange=e=>{let f=e.target.files[0];if(!f)return;let r=new FileReader();r.onload=()=>{let im=new Image();im.onload=()=>{let c=document.createElement('canvas'),s=Math.min(1,1300/im.width);c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);img=c.toDataURL('image/jpeg',.76);$('prev').src=img;$('prev').style.display='block'};im.src=r.result};r.readAsDataURL(f)};async function save(){let x={id:editId===null?crypto.randomUUID():data[editId].id,title:$('title').value.trim(),body:$('body').value.trim(),category:$('cat').value,duration:+$('duration').value,image:img,on:editId===null?true:data[editId].on};if(!x.title||!x.body){$('msg').textContent='Fyll i rubrik och meddelande';return}if(editId===null)data.push(x);else data[editId]=x;await persist();cancel()}async function persist(){await call('/api/admin/posts','PUT',{posts:data});render()}async function move(i,d){let n=i+d;if(n<0||n>=data.length)return;[data[i],data[n]]=[data[n],data[i]];await persist()}async function toggle(i){data[i].on=data[i].on===false;await persist()}async function removePost(i){if(confirm('Ta bort inlägget?')){data.splice(i,1);await persist()}}async function saveSettings(){await call('/api/admin/settings','PUT',{ticker:$('ticker').value,weather:$('weather').value});alert('Sparat')}function open(p){window.open(p,'_blank')}`);
-if(p==='/')return html('Tanum InfoScreen',`<div class="top"><div><div class="brand">🚌 Lysekil Buss</div><div class="sub">Tanum InfoScreen · Information för våra förare</div></div><div class="clock"><div id="clock">--:--</div><div class="date" id="date"></div><div class="date" id="weather"></div></div></div><main class="hero" id="hero"><div class="photo"><div class="placeholder">🚌</div></div><section class="copy"><span class="tag">INFORMATION</span><h1>Välkommen</h1><p>Information för våra förare visas här.</p></section></main><div class="dots" id="dots"></div><div class="ticker"><b>INFORMATION</b><span id="ticker">Välkommen till Tanum InfoScreen</span></div><footer class="foot">Designed by Ahmad Kassab</footer>`,`let a=[],i=0,t;const e=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));function clock(){let d=new Date();$('clock').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});$('date').textContent=d.toLocaleDateString('sv-SE',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}const $=x=>document.getElementById(x);function show(){let h=$('hero');if(!a.length){h.innerHTML='<div class="photo"><div class="placeholder">🚌</div></div><section class="copy"><span class="tag">INFORMATION</span><h1>Välkommen</h1><p>Information för våra förare visas här.</p></section>';$('dots').innerHTML='';return}let x=a[i];h.innerHTML='<div class="photo">'+(x.image?'<img src="'+x.image+'">':'<div class="placeholder">🚌</div>')+'</div><section class="copy"><span class="tag">'+e(x.category)+'</span><h1>'+e(x.title)+'</h1><p>'+e(x.body)+'</p></section>';$('dots').innerHTML=a.map((_,n)=>'<span class="dot '+(n===i?'on':'')+'"></span>').join('');clearTimeout(t);t=setTimeout(()=>{i=(i+1)%a.length;show()},Math.max(15000,+x.duration||120000))}async function refresh(){try{a=await(await fetch('/api/posts',{cache:'no-store'})).json();let s=await(await fetch('/api/settings')).json().catch(()=>({}));$('ticker').textContent=s.ticker||'Välkommen till Tanum InfoScreen';$('weather').textContent=s.weather||'';if(i>=a.length)i=0;show()}catch{}}clock();setInterval(clock,1000);refresh();setInterval(refresh,30000)`);
-return new Response('Not found',{status:404});}};
+const STORE_KEY = "tanum_infoscreen_posts_v1";
+const MAX_IMAGE_BYTES = 500 * 1024; // 500 KB per image
+const MAX_POSTS = 40;
+
+export default {
+  async fetch(request, env) {
+    const url = new URL(request.url);
+    const path = url.pathname;
+
+    if (request.method === "OPTIONS") {
+      return new Response(null, { headers: corsHeaders() });
+    }
+
+    if (path === "/" || path === "/display") {
+      return html(displayPage(), "Tanum InfoScreen");
+    }
+    if (path === "/admin") {
+      return html(adminPage(), "Tanum InfoScreen – Admin");
+    }
+
+    if (path === "/api/posts" && request.method === "GET") {
+      const posts = await readPosts(env);
+      const now = Date.now();
+      const visible = posts
+        .filter(p => p.enabled !== false)
+        .filter(p => !p.startAt || new Date(p.startAt).getTime() <= now)
+        .filter(p => !p.endAt || new Date(p.endAt).getTime() > now)
+        .sort((a, b) => (a.order || 0) - (b.order || 0));
+      return json({ posts: visible });
+    }
+
+    if (path.startsWith("/api/admin/")) {
+      if (!isAuthorized(request, env)) {
+        return json({ error: "Unauthorized" }, 401);
+      }
+
+      if (path === "/api/admin/posts" && request.method === "GET") {
+        return json({ posts: await readPosts(env) });
+      }
+
+      if (path === "/api/admin/posts" && request.method === "PUT") {
+        let body;
+        try { body = await request.json(); } catch { return json({ error: "Ogiltig JSON" }, 400); }
+        if (!Array.isArray(body.posts)) return json({ error: "posts måste vara en lista" }, 400);
+        if (body.posts.length > MAX_POSTS) return json({ error: `Max ${MAX_POSTS} inlägg` }, 400);
+
+        const clean = [];
+        for (let i = 0; i < body.posts.length; i++) {
+          const p = body.posts[i] || {};
+          const image = typeof p.image === "string" ? p.image : "";
+          if (image.length > Math.ceil(MAX_IMAGE_BYTES * 1.4) + 100) {
+            return json({ error: "Bilden är för stor. Välj en bild under 500 KB." }, 413);
+          }
+          clean.push({
+            id: String(p.id || crypto.randomUUID()),
+            title: String(p.title || "Information").slice(0, 100),
+            message: String(p.message || "").slice(0, 1200),
+            image,
+            duration: Math.max(10, Math.min(300, Number(p.duration) || 30)),
+            enabled: p.enabled !== false,
+            startAt: p.startAt ? String(p.startAt) : "",
+            endAt: p.endAt ? String(p.endAt) : "",
+            order: i
+          });
+        }
+        await env.INFO_KV.put(STORE_KEY, JSON.stringify(clean));
+        return json({ ok: true, posts: clean });
+      }
+      return json({ error: "Not found" }, 404);
+    }
+
+    return new Response("Not found", { status: 404 });
+  }
+};
+
+async function readPosts(env) {
+  if (!env.INFO_KV) return [];
+  try { return JSON.parse(await env.INFO_KV.get(STORE_KEY) || "[]"); }
+  catch { return []; }
+}
+
+function isAuthorized(request, env) {
+  const configured = env.ADMIN_PIN;
+  const supplied = request.headers.get("x-admin-pin") || "";
+  return !!configured && supplied === configured;
+}
+
+function corsHeaders() {
+  return {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, PUT, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, X-Admin-Pin"
+  };
+}
+
+function json(data, status = 200) {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8", ...corsHeaders(),
+      "Cache-Control": "no-store" }
+  });
+}
+
+function html(body, title) {
+  return new Response(body.replaceAll("__PAGE_TITLE__", title), {
+    headers: { "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Content-Type-Options": "nosniff" }
+  });
+}
+
+function sharedCss() {
+  return `
+  *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f3f6fb;color:#172033}
+  button,input,textarea{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700}
+  .primary{background:#075bd8;color:#fff}.secondary{background:#e8eef8;color:#17345f}.danger{background:#fee8e7;color:#a3211b}
+  .muted{color:#667085}.top{background:#082b55;color:white;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{font-weight:800;font-size:22px}.wrap{max-width:1000px;margin:24px auto;padding:0 16px}
+  .panel{background:white;border:1px solid #e1e7f0;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 4px 16px #122b4a0a}
+  .field{display:grid;gap:7px;margin:12px 0}.field label{font-weight:700;font-size:14px}
+  input,textarea{width:100%;border:1px solid #cfd8e6;border-radius:10px;padding:12px;background:#fff;color:#172033}
+  textarea{min-height:110px;resize:vertical}.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .row>*{flex:1}.post{display:flex;gap:14px;align-items:center;border:1px solid #e6ebf2;border-radius:12px;padding:12px;margin:10px 0}
+  .thumb{width:86px;height:66px;object-fit:cover;border-radius:8px;background:#e9eef5}.postinfo{flex:1;min-width:0}
+  .postinfo strong{display:block}.postinfo p{margin:5px 0;color:#667085;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tag{display:inline-block;background:#eaf2ff;color:#075bd8;padding:4px 8px;border-radius:20px;font-size:12px}
+  .hidden{display:none!important}.hint{font-size:13px;color:#667085;line-height:1.5}
+  `;
+}
+
+function displayPage() {
+  return `<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>__PAGE_TITLE__</title>
+  <style>
+  ${sharedCss()}
+  html,body{width:100%;height:100%;overflow:hidden;background:#071d38;color:white}
+  .screen{height:100vh;display:flex;flex-direction:column;background:linear-gradient(135deg,#082b55,#06172d)}
+  .head{display:flex;align-items:center;justify-content:space-between;padding:2.2vh 3vw;border-bottom:2px solid #ffffff22;gap:20px}
+  .logo{font-size:clamp(22px,3vw,48px);font-weight:800}.subtitle{font-size:clamp(13px,1.5vw,24px);color:#c7dcf5;margin-top:5px}
+  .clock{text-align:right;font-size:clamp(20px,2.8vw,42px);font-weight:700}.date{font-size:clamp(12px,1.3vw,20px);color:#c7dcf5}
+  .content{flex:1;display:flex;align-items:stretch;gap:2vw;padding:2.5vh 3vw;min-height:0}
+  .visual{flex:1.1;min-width:0;display:flex;align-items:center;justify-content:center;background:#ffffff0c;border-radius:18px;overflow:hidden}
+  .visual img{width:100%;height:100%;object-fit:cover}.visual .placeholder{font-size:clamp(60px,10vw,150px)}
+  .info{flex:1;min-width:0;background:#fff;color:#101828;border-radius:18px;padding:3vw;display:flex;flex-direction:column;justify-content:center}
+  .label{display:inline-block;background:#e11d48;color:white;font-size:clamp(15px,1.6vw,26px);font-weight:800;padding:10px 16px;border-radius:9px;align-self:flex-start;margin-bottom:2vh}
+  h1{font-size:clamp(28px,4vw,62px);line-height:1.08;margin:0 0 2vh}.message{font-size:clamp(19px,2.3vw,36px);line-height:1.35;white-space:pre-wrap}
+  .ticker{margin:0 3vw 2vh;background:#0d5ac5;border-radius:12px;padding:1.5vh 2vw;font-size:clamp(16px,1.8vw,28px);display:flex;gap:14px;align-items:center}
+  .foot{padding:0 3vw 1.5vh;display:flex;justify-content:space-between;color:#b9d1ed;font-size:clamp(11px,1.1vw,16px)}
+  @media(max-aspect-ratio:1/1){.content{flex-direction:column}.visual{min-height:25vh}.info{padding:5vw}.head{padding:16px}.ticker{margin-bottom:10px}}
+  </style></head><body><main class="screen">
+  <header class="head"><div><div class="logo">🚌 Lysekil Buss</div><div class="subtitle">Tanum InfoScreen · Information för våra förare</div></div>
+  <div class="clock"><span id="clock">--:--</span><div class="date" id="date"></div></div></header>
+  <section class="content"><div class="visual" id="visual"><div class="placeholder">🚌</div></div>
+  <article class="info"><div class="label" id="label">INFORMATION</div><h1 id="title">Välkommen</h1><div class="message" id="message">Information för våra förare visas här.</div></article></section>
+  <div class="ticker"><strong>INFORMATION</strong><span id="ticker">Välkommen till Tanum InfoScreen</span></div>
+  <footer class="foot"><span>Lysekil Buss</span><span>Designad av Ahmad Kassab</span></footer></main>
+  <script>
+  let items=[],index=0,timer=null;
+  const el=id=>document.getElementById(id);
+  function updateClock(){const d=new Date();el('clock').textContent=d.toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'});el('date').textContent=d.toLocaleDateString('sv-SE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});}
+  function show(){if(!items.length){el('title').textContent='Välkommen';el('message').textContent='Information för våra förare visas här.';el('visual').innerHTML='<div class="placeholder">🚌</div>';return;}
+    const p=items[index%items.length];el('label').textContent='INFORMATION';el('title').textContent=p.title||'Information';el('message').textContent=p.message||'';
+    el('ticker').textContent=(p.title||'Information')+' – '+(p.message||'');
+    el('visual').innerHTML=p.image?'<img alt="" src="'+p.image+'">':'<div class="placeholder">🚌</div>';
+    clearTimeout(timer);timer=setTimeout(()=>{index=(index+1)%items.length;show();},(Number(p.duration)||30)*1000);
+  }
+  async function load(){try{const r=await fetch('/api/posts',{cache:'no-store'});const d=await r.json();const signature=JSON.stringify(d.posts||[]);if(signature!==window.lastSignature){window.lastSignature=signature;items=d.posts||[];index=0;show();}}catch(e){}}
+  updateClock();setInterval(updateClock,1000);load();setInterval(load,15000);
+  </script></body></html>`;
+}
+
+function adminPage() {
+  return `<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>__PAGE_TITLE__</title><style>
+  ${sharedCss()}
+  .login{max-width:440px;margin:8vh auto}.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{flex:1}
+  .post button{padding:9px 11px}.status{font-size:13px;margin-top:10px}.preview{max-width:100%;max-height:180px;border-radius:10px}
+  </style></head><body><header class="top"><div><div class="brand">🚌 Tanum InfoScreen</div><div class="hint" style="color:#c7dcf5">Administratör</div></div><a href="/display" style="color:white">Visa TV-skärmen ↗</a></header>
+  <main class="wrap">
+  <section class="panel login" id="login"><h2>Logga in</h2><p class="muted">Ange administratörskoden.</p><div class="field"><label>Administratörskod</label><input id="pin" type="password" inputmode="numeric" placeholder="Kod"></div><button class="primary" id="loginBtn">Logga in</button><div class="status" id="loginStatus"></div></section>
+  <div id="app" class="hidden">
+    <section class="panel"><div class="row"><div><h2 style="margin:0">Publicerade inlägg</h2><p class="muted">Lägg till information som visas automatiskt på TV-skärmen.</p></div><button class="primary" id="newBtn">＋ Nytt inlägg</button></div><div id="posts"></div></section>
+    <section class="panel hidden" id="editor"><h2 id="editorTitle">Nytt inlägg</h2><input type="hidden" id="postId">
+      <div class="field"><label>Rubrik</label><input id="title" maxlength="100" placeholder="Exempel: Vägarbete – Väg 164"></div>
+      <div class="field"><label>Meddelande</label><textarea id="message" maxlength="1200" placeholder="Skriv information till förarna..."></textarea></div>
+      <div class="field"><label>Bild (valfritt, max 500 KB)</label><input id="imageFile" type="file" accept="image/*"><img id="imagePreview" class="preview hidden" alt="Förhandsvisning"><button class="secondary hidden" id="removeImage" type="button">Ta bort bild</button></div>
+      <div class="row"><div class="field"><label>Visningstid (sekunder)</label><input id="duration" type="number" min="10" max="300" value="30"></div><div class="field"><label>Starta visning (valfritt)</label><input id="startAt" type="datetime-local"></div></div>
+      <div class="field"><label>Sluta visa efter (valfritt)</label><input id="endAt" type="datetime-local"></div>
+      <div class="field"><label><input id="enabled" type="checkbox" checked style="width:auto"> Aktivt inlägg</label></div>
+      <div class="actions"><button class="primary" id="saveBtn">Spara inlägg</button><button class="secondary" id="cancelBtn">Avbryt</button></div><div class="status" id="editorStatus"></div>
+    </section>
+    <p class="hint">Tips: använd korta meddelanden och tydliga bilder. För bästa resultat bör bilder vara under 500 KB.</p>
+  </div></main>
+  <script>
+  let pin='',posts=[],imageData='';
+  const $=id=>document.getElementById(id);
+  async function api(method='GET',body){const r=await fetch('/api/admin/posts',{method,headers:{'Content-Type':'application/json','X-Admin-Pin':pin},body:body?JSON.stringify(body):undefined});const d=await r.json();if(!r.ok)throw new Error(d.error||'Fel');return d;}
+  $('loginBtn').onclick=async()=>{pin=$('pin').value;try{await loadPosts();$('login').classList.add('hidden');$('app').classList.remove('hidden');}catch(e){$('loginStatus').textContent='Fel kod eller anslutningsproblem.';}};
+  $('pin').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click();});
+  async function loadPosts(){const d=await api();posts=d.posts||[];render();}
+  function render(){const root=$('posts');root.innerHTML='';if(!posts.length){root.innerHTML='<p class="muted">Inga inlägg ännu. Tryck på ”Nytt inlägg”.</p>';return;}
+    posts.sort((a,b)=>(a.order||0)-(b.order||0)).forEach((p,i)=>{const row=document.createElement('div');row.className='post';
+      const img=document.createElement('img');img.className='thumb';img.src=p.image||'data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="90" height="66"><rect width="100%" height="100%" fill="#e9eef5"/><text x="50%" y="55%" text-anchor="middle" font-size="28">🚌</text></svg>');
+      const info=document.createElement('div');info.className='postinfo';const strong=document.createElement('strong');strong.textContent=p.title;const desc=document.createElement('p');desc.textContent=p.message;const tag=document.createElement('span');tag.className='tag';tag.textContent=(p.enabled?'Aktivt':'Pausat')+' · '+p.duration+' sek';info.append(strong,desc,tag);
+      const up=makeBtn('↑','secondary',()=>move(i,-1));const down=makeBtn('↓','secondary',()=>move(i,1));const edit=makeBtn('Redigera','secondary',()=>editPost(p));const del=makeBtn('Ta bort','danger',()=>deletePost(p.id));row.append(img,info,up,down,edit,del);root.append(row);
+    });
+  }
+  function makeBtn(text,cls,fn){const b=document.createElement('button');b.textContent=text;b.className=cls;b.onclick=fn;return b;}
+  function openEditor(){ $('editor').classList.remove('hidden');$('editor').scrollIntoView({behavior:'smooth'});}
+  $('newBtn').onclick=()=>{resetEditor();openEditor();};
+  $('cancelBtn').onclick=()=>{$('editor').classList.add('hidden');};
+  function resetEditor(){ $('postId').value='';$('title').value='';$('message').value='';$('duration').value=30;$('startAt').value='';$('endAt').value='';$('enabled').checked=true;imageData='';$('imageFile').value='';$('imagePreview').classList.add('hidden');$('removeImage').classList.add('hidden');$('editorTitle').textContent='Nytt inlägg';$('editorStatus').textContent='';}
+  function editPost(p){$('postId').value=p.id;$('title').value=p.title;$('message').value=p.message;$('duration').value=p.duration;$('startAt').value=p.startAt||'';$('endAt').value=p.endAt||'';$('enabled').checked=p.enabled!==false;imageData=p.image||'';preview();$('editorTitle').textContent='Redigera inlägg';openEditor();}
+  function preview(){if(imageData){$('imagePreview').src=imageData;$('imagePreview').classList.remove('hidden');$('removeImage').classList.remove('hidden');}else{$('imagePreview').classList.add('hidden');$('removeImage').classList.add('hidden');}}
+  $('imageFile').onchange=()=>{const f=$('imageFile').files[0];if(!f)return;if(f.size>512000){$('editorStatus').textContent='Bilden är större än 500 KB. Välj en mindre bild.';$('imageFile').value='';return;}const reader=new FileReader();reader.onload=()=>{imageData=reader.result;preview();};reader.readAsDataURL(f);};
+  $('removeImage').onclick=()=>{imageData='';$('imageFile').value='';preview();};
+  $('saveBtn').onclick=async()=>{try{const id=$('postId').value||crypto.randomUUID();const post={id,title:$('title').value.trim(),message:$('message').value.trim(),image:imageData,duration:Number($('duration').value)||30,enabled:$('enabled').checked,startAt:$('startAt').value,endAt:$('endAt').value};if(!post.title){$('editorStatus').textContent='Skriv en rubrik först.';return;}const idx=posts.findIndex(p=>p.id===id);if(idx>=0)posts[idx]=post;else posts.push(post);await api('PUT',{posts});await loadPosts();$('editor').classList.add('hidden');}catch(e){$('editorStatus').textContent='Kunde inte spara: '+e.message;}};
+  async function move(i,delta){const j=i+delta;if(j<0||j>=posts.length)return;[posts[i],posts[j]]=[posts[j],posts[i]];try{await api('PUT',{posts});await loadPosts();}catch(e){alert(e.message);}}
+  async function deletePost(id){if(!confirm('Ta bort inlägget?'))return;posts=posts.filter(p=>p.id!==id);try{await api('PUT',{posts});await loadPosts();}catch(e){alert(e.message);}}
+  </script></body></html>`;
+}
