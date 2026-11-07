@@ -1,10 +1,15 @@
-# Tanum InfoScreen
-Cloudflare Worker information display for Lysekil Buss / Tanum.
+# Tanum InfoScreen – TV refresh
 
-- TV display: `/`
-- Admin: `/admin`
-- Health: `/api/health`
-- KV binding required: `INFO_KV`
-- Secret recommended: `ADMIN_PASSWORD`
+This update refreshes the TV display with a widescreen 16:9 layout, live clock/date, Tanum weather via Open-Meteo, a large image/story area, and a bottom information ticker. The mobile admin interface and existing KV-backed post API are retained.
 
-Features: post CRUD, pause/activate, image upload (2.5 MB), rotation duration, ordering, publication schedule, automatic refresh.
+## Cloudflare bindings
+- KV namespace binding: `INFO_KV`
+- Secret: `ADMIN_PIN` (set your own PIN in the Cloudflare dashboard)
+
+## Routes
+- `/` – TV display
+- `/admin` – mobile admin
+- `/api/posts` – public post feed
+- `/api/weather` – current weather for Tanum
+
+See `INSTALLERA_AR.txt` for deployment steps.
