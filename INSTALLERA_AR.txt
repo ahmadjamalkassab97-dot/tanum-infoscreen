@@ -1,36 +1,49 @@
-TANUM INFOSCREEN – RADERING OCH SNABBARE TV-UPPDATERINGAR
+تحديث Tanum InfoScreen – رفع الصور حتى 50 MB
 
-Detta paket gäller ENDAST Cloudflare Worker-projektet:
-tanum-infoscreen
+هذا التحديث مخصص حصراً لمشروع tanum-infoscreen.
+لا ترفع هذه الملفات إلى مشروع lysekil-buss.
 
-VIKTIGT:
-- Ändra inte projektet lysekil-buss.
-- Behåll den befintliga KV-bindningen med variabelnamnet INFO_KV.
-- Befintliga inlägg sparas kvar i samma KV och ska inte raderas av denna uppdatering.
+ماذا يتغير؟
+- رفع الصور مباشرة من معرض iPhone حتى 50 MB للصورة.
+- حفظ الصور في Cloudflare R2، وحفظ بيانات المنشورات في INFO_KV كما هي.
+- اختيار صورة لكل منشور، ومعاينتها، وحذفها أو استبدالها.
+- حذف صورة R2 القديمة تلقائياً عند استبدالها أو حذف المنشور.
+- الإبقاء على رابط التلفاز / ورابط الإدارة / المنشورات الموجودة في INFO_KV.
 
-NYTT I DENNA VERSION:
-1. När du trycker på "Ta bort" raderas inlägget från lagringen.
-2. När du stänger av "Visas på TV" pausas inlägget och det visas inte längre.
-3. TV-skärmen hämtar uppdateringar var femte sekund. Borttagna eller pausade inlägg försvinner därför från TV:n inom ungefär fem sekunder.
-4. API- och sidcache är avstängd för att minska risken att gammalt innehåll visas.
+مهم قبل النشر:
+هذا الإصدار يحتاج R2. لا يمكن حفظ صور 50 MB داخل KV. إنشاء R2 قد يكون ضمن الحصة المجانية، لكن Cloudflare قد يفرض رسوماً إذا تجاوز الاستخدام حدود الخطة المجانية. راجع لوحة Cloudflare للاستهلاك والأسعار.
 
-SÅ UPPDATERAR DU:
-1. Öppna GitHub-repot ahmadjamalkassab97-dot/tanum-infoscreen.
-2. Öppna worker.js.
-3. Ersätt hela innehållet med worker.js från detta paket och gör Commit changes.
-   Alternativt: använd Upload files för att ladda upp worker.js och välj Replace.
-4. Vänta tills Cloudflare visar att den senaste Deployment är Success.
-5. Öppna /admin på iPhone och kontrollera att dina befintliga inlägg fortfarande finns.
-6. Testa med ett tillfälligt testinlägg: öppna TV-visningen, ta bort testinlägget i /admin och kontrollera att det försvinner inom cirka fem sekunder.
+الخطوة 1 – إنشاء مساحة الصور
+1. افتح Cloudflare Dashboard.
+2. من القائمة اختر R2 Object Storage.
+3. اضغط Create bucket.
+4. سمِّ الحاوية: tanum-infoscreen-images
+5. أنشئ الحاوية. لا تجعلها عامة؛ الكود يعرض الصور عبر Worker.
 
-ADMIN:
-https://tanum-infoscreen.ahmadjamalkassab97.workers.dev/admin
+الخطوة 2 – ربط الحاوية بالـ Worker
+1. افتح Workers & Pages ثم tanum-infoscreen.
+2. افتح Settings ثم Bindings.
+3. اختر Add binding ثم R2 bucket.
+4. اكتب Variable name بالضبط: INFO_IMAGES
+5. اختر الحاوية: tanum-infoscreen-images
+6. احفظ التغييرات.
 
-TV:
-https://tanum-infoscreen.ahmadjamalkassab97.workers.dev/
+الخطوة 3 – تحديث الكود
+1. في GitHub افتح مستودع ahmadjamalkassab97-dot/tanum-infoscreen.
+2. استبدل worker.js بالملف worker.js الموجود في هذه الحزمة.
+3. استبدل wrangler.toml بالملف المرفق إذا كنت تستخدمه للنشر عبر Wrangler. لا تحذف ربط INFO_KV الموجود في إعدادات Cloudflare.
+4. اعمل Commit changes وانتظر نجاح Deployment في Cloudflare.
 
-SÄKERHET:
-Om ADMIN_PIN redan är inställt i Cloudflare ska du behålla det.
-Om ingen ADMIN_PIN är inställd används den gamla reservkoden 2468. Byt till en egen kod i Cloudflare Secrets innan systemet används skarpt.
+الخطوة 4 – الاختبار
+1. افتح رابط /admin من iPhone وسجّل الدخول برمز الإدارة الحالي.
+2. أنشئ منشوراً تجريبياً وارفع صورة صغيرة أولاً.
+3. تأكد من ظهور الصورة في المعاينة وعلى التلفاز.
+4. جرّب استبدال الصورة ثم حذفها.
+5. بعد نجاح الاختبار، جرّب صورة أكبر. الحد الأقصى في الواجهة والكود 50 MB.
 
-Obs: Denna uppdatering förbereder koden. Den publiceras inte förrän GitHub/Cloudflare har genomfört deploymenten.
+تنبيهات مهمة
+- لا تحذف INFO_KV ولا تغيّر اسم ربطه؛ المنشورات الحالية محفوظة فيه.
+- لا تغيّر ADMIN_PIN أو رمز الإدارة الحالي.
+- هذا الملف لا ينشر التحديث تلقائياً. يجب ربط R2 ثم نشر worker.js وانتظار نجاح Deployment.
+- إذا لم تضف INFO_IMAGES binding، سيبقى عرض المنشورات النصية متاحاً، لكن رفع الصور لن يعمل.
+- الصور القديمة المخزنة بصيغة Data URL تبقى ضمن بيانات المنشور كما هي. عند استبدالها بصورة جديدة من R2، تُحذف الصورة القديمة من بيانات المنشور.

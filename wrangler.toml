@@ -2,5 +2,5 @@ name = "tanum-infoscreen"
 main = "worker.js"
 compatibility_date = "2026-11-07"
 
-# INFO_KV ska kopplas i Cloudflare Dashboard som KV Namespace med binding-namnet INFO_KV.
-# Låt den befintliga INFO_KV-bindningen vara kvar när du distribuerar.
+# Behåll den befintliga KV-bindningen INFO_KV.
+# Skapa en R2-bucket och koppla den som INFO_IMAGES i Cloudflare Dashboard.

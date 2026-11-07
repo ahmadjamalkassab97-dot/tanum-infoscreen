@@ -1,8 +1,6 @@
-# Tanum InfoScreen – Delete control and fast refresh
+# Tanum InfoScreen
 
-- Permanent delete removes the post from KV.
-- Pausing hides the post from the TV.
-- TV polls for changes every 5 seconds.
-- Keeps the existing `INFO_KV` binding and stored posts.
+Uppdatering med bildlagring i Cloudflare R2 och uppladdning upp till 50 MB.
 
-Deploy by replacing `worker.js` in the existing `tanum-infoscreen` GitHub repository. Do not change the separate `lysekil-buss` project.
+Behåll befintlig KV-binding `INFO_KV`. Skapa en R2-bucket och anslut den som `INFO_IMAGES` innan du publicerar den nya `worker.js`.
+Se `INSTALLERA_AR.txt` för instruktioner på arabiska.
