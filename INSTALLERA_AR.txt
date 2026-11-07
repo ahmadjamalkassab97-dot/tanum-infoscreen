@@ -1,36 +1,36 @@
-Tanum InfoScreen – uppdaterad TV-design
+TANUM INFOSCREEN – RADERING OCH SNABBARE TV-UPPDATERINGAR
 
-VIKTIGT
-- Detta paket gäller ENDAST projektet tanum-infoscreen.
-- Ändra eller radera inte projektet lysekil-buss.
-- Behåll KV-bindningen med namnet INFO_KV.
+Detta paket gäller ENDAST Cloudflare Worker-projektet:
+tanum-infoscreen
 
-VAD SOM ÄR NYTT
-- Ny bredbildsdesign för TV (16:9) med tydlig topp, huvudbild och textyta.
-- Klocka, datum och väder för Tanum (väder hämtas kostnadsfritt från Open-Meteo).
-- Informationsremsa längst ned och automatisk växling mellan aktiva inlägg.
-- Mobilanpassad administrationssida på /admin.
-- Befintliga funktioner för att skapa, redigera, radera, pausa, sortera och schemalägga inlägg finns kvar.
+VIKTIGT:
+- Ändra inte projektet lysekil-buss.
+- Behåll den befintliga KV-bindningen med variabelnamnet INFO_KV.
+- Befintliga inlägg sparas kvar i samma KV och ska inte raderas av denna uppdatering.
 
-UPPDATERING
+NYTT I DENNA VERSION:
+1. När du trycker på "Ta bort" raderas inlägget från lagringen.
+2. När du stänger av "Visas på TV" pausas inlägget och det visas inte längre.
+3. TV-skärmen hämtar uppdateringar var femte sekund. Borttagna eller pausade inlägg försvinner därför från TV:n inom ungefär fem sekunder.
+4. API- och sidcache är avstängd för att minska risken att gammalt innehåll visas.
+
+SÅ UPPDATERAR DU:
 1. Öppna GitHub-repot ahmadjamalkassab97-dot/tanum-infoscreen.
-2. Öppna filen worker.js.
-3. Ersätt hela innehållet i worker.js med filen worker.js i detta paket.
-4. Spara ändringen (Commit changes). Cloudflare ska sedan bygga och publicera automatiskt eftersom projektet är kopplat till GitHub.
-5. Vänta tills senaste deployment visar Success i Cloudflare.
+2. Öppna worker.js.
+3. Ersätt hela innehållet med worker.js från detta paket och gör Commit changes.
+   Alternativt: använd Upload files för att ladda upp worker.js och välj Replace.
+4. Vänta tills Cloudflare visar att den senaste Deployment är Success.
+5. Öppna /admin på iPhone och kontrollera att dina befintliga inlägg fortfarande finns.
+6. Testa med ett tillfälligt testinlägg: öppna TV-visningen, ta bort testinlägget i /admin och kontrollera att det försvinner inom cirka fem sekunder.
 
-KONTROLL I CLOUDFLARE
-- Workers & Pages > tanum-infoscreen > Settings > Bindings.
-- Kontrollera att KV Namespace är kopplad med Variable name: INFO_KV.
-- Lägg till Secret med namnet ADMIN_PIN och välj en egen administratörskod. Använd inte 2468 i drift.
-- Gör inte ändringar i något annat Worker.
+ADMIN:
+https://tanum-infoscreen.ahmadjamalkassab97.workers.dev/admin
 
-TEST
-- TV: öppna https://DIN-WORKER.workers.dev/
-- Administration: öppna https://DIN-WORKER.workers.dev/admin
-- API-test: öppna https://DIN-WORKER.workers.dev/api/posts
-  Det ska visas JSON med posts. Om INFO_KV saknas visas ett fel واضح.
+TV:
+https://tanum-infoscreen.ahmadjamalkassab97.workers.dev/
 
-OBSERVATIONER
-- Bilderna sparas som data i KV. Håll bilderna مضغوطة وصغيرة (حتى 2 MB لكل صورة) ولا ترفع عدداً كبيراً من الصور الكبيرة.
-- لا يتطلب هذا الإصدار خدمة Yodeck أو اشتراكاً خارجياً. استخدام Cloudflare يخضع لحدود الخطة المجانية وسياسات Cloudflare.
+SÄKERHET:
+Om ADMIN_PIN redan är inställt i Cloudflare ska du behålla det.
+Om ingen ADMIN_PIN är inställd används den gamla reservkoden 2468. Byt till en egen kod i Cloudflare Secrets innan systemet används skarpt.
+
+Obs: Denna uppdatering förbereder koden. Den publiceras inte förrän GitHub/Cloudflare har genomfört deploymenten.

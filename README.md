@@ -1,15 +1,8 @@
-# Tanum InfoScreen – TV refresh
+# Tanum InfoScreen – Delete control and fast refresh
 
-This update refreshes the TV display with a widescreen 16:9 layout, live clock/date, Tanum weather via Open-Meteo, a large image/story area, and a bottom information ticker. The mobile admin interface and existing KV-backed post API are retained.
+- Permanent delete removes the post from KV.
+- Pausing hides the post from the TV.
+- TV polls for changes every 5 seconds.
+- Keeps the existing `INFO_KV` binding and stored posts.
 
-## Cloudflare bindings
-- KV namespace binding: `INFO_KV`
-- Secret: `ADMIN_PIN` (set your own PIN in the Cloudflare dashboard)
-
-## Routes
-- `/` – TV display
-- `/admin` – mobile admin
-- `/api/posts` – public post feed
-- `/api/weather` – current weather for Tanum
-
-See `INSTALLERA_AR.txt` for deployment steps.
+Deploy by replacing `worker.js` in the existing `tanum-infoscreen` GitHub repository. Do not change the separate `lysekil-buss` project.
