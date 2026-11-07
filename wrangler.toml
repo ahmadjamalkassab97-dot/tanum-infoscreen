@@ -2,5 +2,5 @@ name = "tanum-infoscreen"
 main = "worker.js"
 compatibility_date = "2026-11-07"
 
-# OBS: Keep the existing INFO_KV binding in Cloudflare Dashboard.
-# Cloudflare has already connected INFO_KV to the KV namespace.
+# INFO_KV ska kopplas i Cloudflare Dashboard som KV Namespace med binding-namnet INFO_KV.
+# Låt den befintliga INFO_KV-bindningen vara kvar när du distribuerar.

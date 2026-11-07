@@ -1,0 +1,26 @@
+TANUM INFOSCREEN – INSTALLATION
+
+Detta paket innehåller en ny komplett version av skärmen och administratörspanelen.
+
+Funktioner:
+- TV-visning med stor bild till vänster och tydligt meddelande till höger.
+- Automatisk växling mellan aktiva inlägg enligt vald visningstid.
+- Adminpanel på /admin som fungerar i iPhone.
+- Skapa, redigera och ta bort inlägg.
+- Ladda upp bild från telefonen (max 2 MB per bild).
+- Pausa/aktivera inlägg.
+- Ändra ordning med upp/ned.
+- Schemalägg start- och sluttid.
+- Automatisk uppdatering av TV-vyn.
+
+VIKTIGT:
+Cloudflare Worker måste ha en KV-binding med exakt namnet INFO_KV.
+I Cloudflare Dashboard ska den befintliga KV-bindingen INFO_KV finnas kvar.
+Sätt dessutom en Worker environment variable/secret med namnet ADMIN_PIN.
+Första inloggningskod om ADMIN_PIN inte har satts: 2468. Byt den till en egen kod innan användning.
+
+URL:
+TV: https://tanum-infoscreen.<ditt-konto>.workers.dev/
+Admin: https://tanum-infoscreen.<ditt-konto>.workers.dev/admin
+
+Den här versionen ersätter den gamla enkla välkomstsidan. Distribuera worker.js som Worker-kod.
