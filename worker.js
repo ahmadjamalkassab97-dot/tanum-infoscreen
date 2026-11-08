@@ -1,10 +1,21 @@
 const BRAND="Lysekil Buss";
-const KEY="tanum_infoscreen_posts_v1";
+const KEY="items";
+const FALLBACK_KEY="tanum_infoscreen_posts_v1";
 const DEFAULT_PIN="1989";
 const html=(s)=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store, no-cache, must-revalidate"}});
-async function readPosts(env){try{return JSON.parse(await env.INFO_KV.get(KEY))||[]}catch{return []}}
-async function savePosts(env,posts){const data=JSON.stringify(posts);if(new TextEncoder().encode(data).length>24*1024*1024)throw new Error("Lagringen är nästan full. Ta bort äldre inlägg eller bilder först.");await env.INFO_KV.put(KEY,data)}
+async function readPosts(env){
+  const current=await env.INFO_KV.get(KEY);
+  if(current!==null){try{return JSON.parse(current)||[]}catch{throw new Error("Kunde inte läsa sparade inlägg i INFO_KV.")}}
+  const fallback=await env.INFO_KV.get(FALLBACK_KEY);
+  if(fallback!==null){try{return JSON.parse(fallback)||[]}catch{throw new Error("Kunde inte läsa äldre inlägg i INFO_KV.")}}
+  return [];
+}
+async function savePosts(env,posts){
+  const data=JSON.stringify(posts);
+  if(new TextEncoder().encode(data).length>24*1024*1024)throw new Error("Lagringen är nästan full. Ta bort äldre inlägg eller bilder först.");
+  await env.INFO_KV.put(KEY,data);
+}
 function shell(title,body,script=""){return `<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
 :root{--navy:#102b50;--blue:#1760c5;--gold:#d9b64e;--bg:#f2f5fa;--ink:#142033}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}button,input,textarea,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700}.primary{background:var(--blue);color:white}.danger{background:#d92d45;color:white}.soft{background:#eaf0fa;color:#173c70}.top{background:var(--navy);color:white;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:clamp(20px,3vw,32px);font-weight:800}.sub{opacity:.85;margin-top:5px}.wrap{max-width:1100px;margin:24px auto;padding:0 16px}.panel{background:white;border-radius:16px;padding:20px;box-shadow:0 6px 24px #102b5010;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}.field label{font-weight:700;font-size:14px}.field input,.field textarea,.field select{border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:white;width:100%}.field textarea{min-height:110px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{color:#64748b}.post{display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid #e7edf5}.thumb{width:110px;height:72px;object-fit:cover;border-radius:9px;background:#e8eef7}.post h3{margin:0 0 6px}.toggle{accent-color:#159447;width:20px;height:20px}.hidden{display:none!important}.preview{border:1px solid #dbe4f0;border-radius:12px;overflow:hidden;margin-top:12px}.preview img{width:100%;max-height:220px;object-fit:cover}.notice{padding:12px;border-radius:10px;background:#fff7df;color:#76520a;margin:10px 0}
 @media(max-width:650px){.grid{grid-template-columns:1fr}.post{grid-template-columns:76px 1fr}.thumb{width:76px;height:62px}.post .actions{grid-column:1/-1}.top{align-items:flex-start;flex-direction:column}}
@@ -36,7 +47,8 @@ function esc(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&l
 function newPost(){editing=null;imageData='';document.getElementById('formTitle').textContent='Nytt inlägg';['title','message','from','to'].forEach(x=>document.getElementById(x).value='');document.getElementById('category').value='Information';document.getElementById('duration').value='120';document.getElementById('imageFile').value='';document.getElementById('imagePreview').classList.add('hidden');document.getElementById('editor').classList.remove('hidden');document.getElementById('editor').scrollIntoView({behavior:'smooth'})}
 function edit(id){let p=items.find(x=>x.id===id);editing=id;imageData=p.image||'';document.getElementById('formTitle').textContent='Redigera inlägg';document.getElementById('title').value=p.title;document.getElementById('message').value=p.message;document.getElementById('category').value=p.category;document.getElementById('duration').value=String(p.duration||120);document.getElementById('from').value=p.from||'';document.getElementById('to').value=p.to||'';document.getElementById('imageFile').value='';preview();document.getElementById('editor').classList.remove('hidden');document.getElementById('editor').scrollIntoView({behavior:'smooth'})}
 function cancelEdit(){document.getElementById('editor').classList.add('hidden')}
-function preview(){let el=document.getElementById('imagePreview');if(imageData){el.innerHTML='<img src="'+imageData+'">';el.classList.remove('hidden')}else el.classList.add('hidden')}
+function preview(){let el=document.getElementById('imagePreview');if(imageData){el.innerHTML='<img src="'+imageData+'"><div style="padding:10px"><button type="button" class="danger" onclick="removeImage()">Ta bort bilden</button></div>';el.classList.remove('hidden')}else{el.innerHTML='';el.classList.add('hidden')}}
+function removeImage(){imageData='';document.getElementById('imageFile').value='';preview()}
 document.getElementById('imageFile').addEventListener('change',e=>{let f=e.target.files[0];if(!f)return;if(f.size>12*1024*1024){alert('Bilden är större än 12 MB. Välj en mindre bild.');e.target.value='';return}let reader=new FileReader();reader.onload=()=>{imageData=reader.result;preview()};reader.readAsDataURL(f)});
 async function save(){let title=document.getElementById('title').value.trim(),message=document.getElementById('message').value.trim();if(!title||!message){alert('Fyll i både rubrik och meddelande.');return}let p={id:editing||crypto.randomUUID(),title,message,category:document.getElementById('category').value,duration:Number(document.getElementById('duration').value),from:document.getElementById('from').value,to:document.getElementById('to').value,image:imageData};if(p.from&&p.to&&Date.parse(p.to)<=Date.parse(p.from)){alert('Sluttiden måste vara efter starttiden.');return}let b=document.querySelector('#editor .primary');b.disabled=true;try{await api('/api/admin/posts',{method:'PUT',body:JSON.stringify(p)});await load();cancelEdit();alert('Inlägget har sparats.')}catch(e){alert(e.message)}finally{b.disabled=false}}
 async function removePost(id){if(!confirm('Vill du verkligen ta bort inlägget permanent?'))return;try{await api('/api/admin/posts/'+id,{method:'DELETE'});await load()}catch(e){alert(e.message)}}
@@ -53,7 +65,7 @@ export default {
   if(path==="/api/weather"&&request.method==="GET"){
    try{const r=await fetch("https://api.open-meteo.com/v1/forecast?latitude=58.72&longitude=11.32&current=temperature_2m,weather_code&timezone=Europe%2FStockholm");if(!r.ok)throw Error("weather");const d=await r.json();const code=d.current.weather_code;let description="Molnigt",icon="☁️";if(code===0){description="Klart";icon="☀️"}else if([1,2,3].includes(code)){description="Delvis molnigt";icon="🌤️"}else if([45,48].includes(code)){description="Dimma";icon="🌫️"}else if([51,53,55,61,63,65,80,81,82].includes(code)){description="Regn";icon="🌧️"}else if([71,73,75,77,85,86].includes(code)){description="Snö";icon="❄️"}else if([95,96,99].includes(code)){description="Åska";icon="⛈️"}return json({temp:Math.round(d.current.temperature_2m),description,icon})}catch{return json({error:"Väderdata saknas"},502)}
   }
-  if(path==="/api/posts"&&request.method==="GET"){if(!env.INFO_KV)return json({error:"INFO_KV saknas"},500);return json({posts:await readPosts(env)})}
+  if(path==="/api/posts"&&request.method==="GET"){if(!env.INFO_KV)return json({error:"INFO_KV saknas – kontrollera Worker Binding INFO_KV"},500);try{return json({posts:await readPosts(env)})}catch(e){return json({error:e.message||"Kunde inte läsa inlägg från INFO_KV"},500)}}
   if(path.startsWith("/api/admin/")){
    if(!env.INFO_KV)return json({error:"INFO_KV saknas"},500);
    const pin=request.headers.get("x-admin-pin")||"";
