@@ -1,6 +1,3 @@
 name = "tanum-infoscreen"
 main = "worker.js"
-compatibility_date = "2026-11-07"
-
-# Behåll den befintliga KV-bindningen INFO_KV.
-# Skapa en R2-bucket och koppla den som INFO_IMAGES i Cloudflare Dashboard.
+compatibility_date = "2026-11-06"
