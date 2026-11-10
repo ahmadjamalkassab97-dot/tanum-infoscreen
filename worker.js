@@ -1,20 +1,25 @@
 const BRAND="Lysekil Buss";
 const KEY="items";
 const FALLBACK_KEY="tanum_infoscreen_posts_v1";
-const DEFAULT_PIN="1989";
+const DEFAULT_PIN="1989"; const LEGACY_PIN="2468"; const validPin=(pin)=>pin===DEFAULT_PIN||pin===LEGACY_PIN;
 const html=(s)=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const json=(data,status=200)=>new Response(JSON.stringify(data),{status,headers:{"content-type":"application/json; charset=utf-8","cache-control":"no-store, no-cache, must-revalidate"}});
 async function readPosts(env){
   const current=await env.INFO_KV.get(KEY);
-  if(current!==null){try{return JSON.parse(current)||[]}catch{throw new Error("Kunde inte läsa sparade inlägg i INFO_KV.")}}
   const fallback=await env.INFO_KV.get(FALLBACK_KEY);
-  if(fallback!==null){try{return JSON.parse(fallback)||[]}catch{throw new Error("Kunde inte läsa äldre inlägg i INFO_KV.")}}
-  return [];
+  let currentPosts=null, fallbackPosts=null;
+  if(current!==null){try{currentPosts=JSON.parse(current);if(!Array.isArray(currentPosts))currentPosts=null;}catch{throw new Error("Kunde inte läsa sparade inlägg i INFO_KV.")}}
+  if(fallback!==null){try{fallbackPosts=JSON.parse(fallback);if(!Array.isArray(fallbackPosts))fallbackPosts=null;}catch{throw new Error("Kunde inte läsa äldre inlägg i INFO_KV.")}}
+  // Use the legacy key if the newer key is empty, without deleting either value.
+  if(currentPosts && currentPosts.length>0)return currentPosts;
+  if(fallbackPosts && fallbackPosts.length>0)return fallbackPosts;
+  return currentPosts || fallbackPosts || [];
 }
 async function savePosts(env,posts){
   const data=JSON.stringify(posts);
   if(new TextEncoder().encode(data).length>24*1024*1024)throw new Error("Lagringen är nästan full. Ta bort äldre inlägg eller bilder först.");
   await env.INFO_KV.put(KEY,data);
+  await env.INFO_KV.put(FALLBACK_KEY,data);
 }
 function shell(title,body,script=""){return `<!doctype html><html lang="sv"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>
 :root{--navy:#102b50;--blue:#1760c5;--gold:#d9b64e;--bg:#f2f5fa;--ink:#142033}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--bg)}button,input,textarea,select{font:inherit}button{cursor:pointer;border:0;border-radius:10px;padding:12px 16px;font-weight:700}.primary{background:var(--blue);color:white}.danger{background:#d92d45;color:white}.soft{background:#eaf0fa;color:#173c70}.top{background:var(--navy);color:white;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}.brand{font-size:clamp(20px,3vw,32px);font-weight:800}.sub{opacity:.85;margin-top:5px}.wrap{max-width:1100px;margin:24px auto;padding:0 16px}.panel{background:white;border-radius:16px;padding:20px;box-shadow:0 6px 24px #102b5010;margin-bottom:18px}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}.field{display:flex;flex-direction:column;gap:7px;margin:12px 0}.field label{font-weight:700;font-size:14px}.field input,.field textarea,.field select{border:1px solid #cbd5e1;border-radius:10px;padding:12px;background:white;width:100%}.field textarea{min-height:110px;resize:vertical}.actions{display:flex;gap:8px;flex-wrap:wrap}.muted{color:#64748b}.post{display:grid;grid-template-columns:110px 1fr auto;gap:14px;align-items:center;padding:12px 0;border-bottom:1px solid #e7edf5}.thumb{width:110px;height:72px;object-fit:cover;border-radius:9px;background:#e8eef7}.post h3{margin:0 0 6px}.toggle{accent-color:#159447;width:20px;height:20px}.hidden{display:none!important}.preview{border:1px solid #dbe4f0;border-radius:12px;overflow:hidden;margin-top:12px}.preview img{width:100%;max-height:220px;object-fit:cover}.notice{padding:12px;border-radius:10px;background:#fff7df;color:#76520a;margin:10px 0}
@@ -82,7 +87,7 @@ export default {
   }
   if(path==="/api/admin/ticker"){
    if(!env.INFO_KV)return json({error:"INFO_KV saknas"},500);
-   const pin=request.headers.get("x-admin-pin")||"";if(pin!==DEFAULT_PIN)return json({error:"Fel administratörskod"},401);
+   const pin=request.headers.get("x-admin-pin")||"";if(!validPin(pin))return json({error:"Fel administratörskod"},401);
    if(request.method==="GET"){const raw=await env.INFO_KV.get("ticker");const saved=raw?JSON.parse(raw):null;const items=Array.isArray(saved?.items)?saved.items:(saved?.text?[{id:"legacy",label:saved.label||"INFORMATION",text:saved.text,duration:60}]:[]);return json({items})}
    if(request.method==="PUT"){const body=await request.json();if(!Array.isArray(body.items))return json({error:"Ogiltig lista"},400);const items=body.items.slice(0,30).map((t,i)=>({id:String(t.id||crypto.randomUUID()),label:String(t.label||"INFORMATION").slice(0,35),text:String(t.text||"").trim().slice(0,500),duration:[60,90,120].includes(Number(t.duration))?Number(t.duration):60})).filter(t=>t.text);await env.INFO_KV.put("ticker",JSON.stringify({items}));return json({ok:true,items})}
    if(request.method==="DELETE"){await env.INFO_KV.delete("ticker");return json({ok:true})}
@@ -91,7 +96,7 @@ export default {
   if(path.startsWith("/api/admin/")){
    if(!env.INFO_KV)return json({error:"INFO_KV saknas"},500);
    const pin=request.headers.get("x-admin-pin")||"";
-   if(pin!==DEFAULT_PIN)return json({error:"Fel administratörskod"},401);
+   if(!validPin(pin))return json({error:"Fel administratörskod"},401);
    let posts=await readPosts(env);
    if(path==="/api/admin/posts"&&request.method==="GET")return json({posts});
    if(path==="/api/admin/posts"&&request.method==="PUT"){
